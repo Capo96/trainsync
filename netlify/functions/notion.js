@@ -12,6 +12,28 @@ exports.handler = async function(event) {
 
   const action = event.queryStringParameters?.action || '';
 
+  // Exchange code for tokens
+  if (action === 'exchange') {
+    const code = event.queryStringParameters?.code || '';
+    try {
+      const resp = await fetch('https://www.strava.com/oauth/token', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          client_id: STRAVA_CLIENT_ID,
+          client_secret: STRAVA_CLIENT_SECRET,
+          code: code,
+          grant_type: 'authorization_code'
+        })
+      });
+      const data = await resp.json();
+      return { statusCode: resp.status, headers, body: JSON.stringify(data) };
+    } catch(e) {
+      return { statusCode: 500, headers, body: JSON.stringify({ error: e.message }) };
+    }
+  }
+
+  // Refresh access token
   if (action === 'strava_refresh') {
     try {
       const resp = await fetch('https://www.strava.com/oauth/token', {
@@ -31,6 +53,7 @@ exports.handler = async function(event) {
     }
   }
 
+  // Notion proxy
   const endpoint = event.queryStringParameters?.endpoint || '';
   if (endpoint) {
     try {
